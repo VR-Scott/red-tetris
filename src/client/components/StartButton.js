@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Button, Typography } from "@material-ui/core";
 
 const StyledStartButton = styled.button`
   box-sizing: border-box;
@@ -18,8 +19,13 @@ const StyledStartButton = styled.button`
   cursor: pointer;
 `;
 
-const StartButton = ({ callback }) => (
-  <StyledStartButton onClick={callback}>Start Game</StyledStartButton>
+const StartButton = ({ callback, mainSocket, setStart, newGame}) => (
+  <Button variant="contained"
+id="startButton"
+  onClick={() => callback(mainSocket, setStart, newGame, setStart)} fullWidth>
+
+  <Typography>START GAME</Typography>
+</Button>
 );
 
 export default StartButton;

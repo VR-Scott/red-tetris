@@ -1,129 +1,408 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 
-import { createStage, checkCollision } from '../helpers/gameHelpers';
-import { StyledTetrisWrapper, StyledTetris } from './styles/StyledTetris';
+import { createStage, checkCollision } from "../helpers/gameHelpers";
+import { userSocket, socketOff, socketOn, socketEmit } from "../middleware/socket";
+
+// Styled Component
+import { StyledTetrisWrapper, StyledTetris } from "./styles/StyledTetris";
 
 // Custom Hooks
-import { useInterval } from '../hooks/useInterval';
-import { usePlayer } from '../hooks/usePlayer';
-import { useStage } from '../hooks/useStage';
-import { useGameStatus } from '../hooks/useGameStatus';
-
+import { useInterval } from "../hooks/useInterval";
+import { usePlayer } from "../hooks/usePlayer";
+import { useStage } from "../hooks/useStage";
+import { useGameStatus } from "../hooks/useGameStatus";
+import { movePlayer, dropPlayer, drop, playerRotation } from "./MovePlayer";
 // Components
-import Stage from './Stage';
-import Display from './Display';
-import StartButton from './StartButton';
+import Stage from "./Stage";
+import Display from "./Display";
+import StartButton from "./StartButton";
+import { TETROMINOS } from "../helpers/tetrominos";
 
-const Tetris = () => {
-  const [dropTime, setDropTime] = useState(null);
-  const [gameOver, setGameOver] = useState(false);
+let newGame = {
+	users: [],
+	left: [],
+	room: null,
+};
 
-  const [player, updatePlayerPos, resetPlayer, playerRotate] = usePlayer();
-  const [stage, setStage, rowsCleared] = useStage(player, resetPlayer);
-  const [score, setScore, rows, setRows, level, setLevel] = useGameStatus(
-    rowsCleared
-  );
+let mainSocket = null;
 
-  console.log('re-render');
+const Tetris = (props) => {
+	const [dropTime, setDropTime] = useState(null);
+	const [gameOver, setGameOver] = useState(false);
+	const [winner, setWinner] = useState(null);
+	const [host, setHost] = useState(false);
+	const [shapes, setShapes] = useState(null);
+	const [user, setUser] = useState(null);
+	const [start, setStart] = useState(false);
+	const [shapeTrack, setShapeTrack] = useState(0);
+	const {
+		player,
+		updatePlayerPos,
+		resetPlayer,
+		playerRotate,
+		playerFall,
+		setPlayer,
+		rotate,
+	} = usePlayer(setShapeTrack, TETROMINOS);
+	const { stage, setStage, rowsCleared, addRow } = useStage(
+		player,
+		resetPlayer,
+		mainSocket,
+		shapes,
+		shapeTrack,
+		setPlayer
+	);
+	const { score, setScore, rows, setRows, level, setLevel } = useGameStatus(
+		rowsCleared
+	);
+	const startGame = useCallback(
+		(
+			setStart,
+			setStage,
+			setDropTime,
+			resetPlayer,
+			setGameOver,
+			newGame,
+			setWinner,
+			setScore,
+			setRows,
+			setLevel
+		) => {
+			// Reset everything
+			setStart(true);
+			setStage(createStage());
+			setDropTime(1000);
+			resetPlayer(shapes, shapeTrack, setPlayer);
+			setGameOver(false);
+			newGame.left = [...newGame.users];
+			setWinner(null);
+			setScore(0);
+			setRows(0);
+			setLevel(1);
+		},
+		// eslint-disable-next-line
+		[resetPlayer, setLevel, setRows, setScore, setStage, shapes]
+	);
 
-  const movePlayer = dir => {
-    if (!checkCollision(player, stage, { x: dir, y: 0 })) {
-      updatePlayerPos({ x: dir, y: 0 });
-    }
-  };
+	useEffect(() => {
+		if (shapes) {
+			startGame(
+				setStart,
+				setStage,
+				setDropTime,
+				resetPlayer,
+				setGameOver,
+				newGame,
+				setWinner,
+				setScore,
+				setRows,
+				setLevel
+			);
+		}
+		// eslint-disable-next-line
+	}, [shapes, startGame]);
+	useEffect(() => {
+		if (gameOver) setShapeTrack(0);
+	}, [gameOver, shapeTrack, setShapeTrack]);
+	const connect = useCallback(
+		async (
+			userSocket,
+			newGame,
+			setHost,
+			setUser,
+			setShapes,
+			setWinner,
+			setGameOver,
+			setDropTime,
+			setStart
+		) => {
+			if (!mainSocket) {
+				let test = props.room.split("[");
+				newGame.room = test[0][0] === "#" ? test[0].substr(1) : test[0];
+				mainSocket = await userSocket(props.room);
+				socketOff(mainSocket, "updateUsers")
+				socketOff(mainSocket, "updateUsers");
+				socketOff(mainSocket, "addRow");
+				socketOff(mainSocket, "startiguess");
+				socketOff(mainSocket, "deadUser");
+				socketOff(mainSocket, "setWinner");
+				socketOn(mainSocket, "updateUsers", (t) => {
+					newGame.users = t;
+					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
+						setHost(true);
+					setUser(newGame.users.find((e) => e.id === mainSocket.id));
+				});
+				socketOn(mainSocket, "startiguess", (r) => {
+					socketEmit(mainSocket, "updatePlayer", stage);
+					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
+						socketEmit(mainSocket, "receive shapes", r);
+				});
+				socketOn(mainSocket, "receive shapes", (shapes1) => {
+					setShapes(shapes1);
+				});
+				socketOn(mainSocket, "deadUser", (id) => {
+					newGame.left.splice(
+						newGame.left.findIndex((e) => e.id === id),
+						1
+					);
+					if (newGame.left.length === 1) {
+						setGameOver(true);
+						setDropTime(null);
+						socketEmit(mainSocket, "winner", newGame.left[0]);
+					}
+				});
+				socketOn(mainSocket, "setWinner", (p_name) => {
+					setStart(false);
+					socketEmit(mainSocket, "updatePlayer", stage);
+					setWinner(p_name);
+				});
+			}
+		},
+		[props.room, stage]
+	);
 
-  const keyUp = ({ keyCode }) => {
-    if (!gameOver) {
-      // Activate the interval again when user releases down arrow.
-      if (keyCode === 40) {
-        setDropTime(1000 / (level + 1));
-      }
-    }
-  };
+	const useMountEffect = (
+		fun,
+		userSocket,
+		newGame,
+		setHost,
+		setUser,
+		setShapes,
+		setWinner,
+		setGameOver,
+		setDropTime,
+		setStart
+	) =>
+		useEffect(() => {
+			fun(
+				userSocket,
+				newGame,
+				setHost,
+				setUser,
+				setShapes,
+				setWinner,
+				setGameOver,
+				setDropTime,
+				setStart
+			);
+			// eslint-disable-next-line
+		}, []);
 
-  const startGame = () => {
-    // Reset everything
-    setStage(createStage());
-    setDropTime(1000);
-    resetPlayer();
-    setScore(0);
-    setLevel(0);
-    setRows(0);
-    setGameOver(false);
-  };
+	const callStartGame = (mainSocket, setStart, newGame) => {
+		socketEmit(mainSocket,"start?", newGame.room);
+		setStart(true);
+	};
 
-  const drop = () => {
-    // Increase level when player has cleared 10 rows
-    if (rows > (level + 1) * 10) {
-      setLevel(prev => prev + 1);
-      // Also increase speed
-      setDropTime(1000 / (level + 1) + 200);
-    }
+	const keyUp = ({ keyCode }, gameOver, setDropTime, level) => {
+		if (!gameOver) {
+			if (keyCode === 40) {
+				setDropTime(1000 / (level + 1) + 200);
+			}
+		}
+	};
 
-    if (!checkCollision(player, stage, { x: 0, y: 1 })) {
-      updatePlayerPos({ x: 0, y: 1, collided: false });
-    } else {
-      // Game over!
-      if (player.pos.y < 1) {
-        console.log('GAME OVER!!!');
-        setGameOver(true);
-        setDropTime(null);
-      }
-      updatePlayerPos({ x: 0, y: 0, collided: true });
-    }
-  };
+	const move = (
+		{ keyCode },
+		movePlayer,
+		dropPlayer,
+		setDropTime,
+		drop,
+		rows,
+		level,
+		player,
+		stage,
+		setLevel,
+		updatePlayerPos,
+		setGameOver,
+		mainSocket,
+		start,
+		setStart,
+		playerRotation,
+		playerRotate,
+		gameOver,
+		setPlayer
+	) => {
+		if (!gameOver) {
+			// 37 = left arrow, -1 on x axis
+			// 39 = right arrow, +1 on x axis
+			// 40 = down arrow
+			// 38 = up arrow, rotate
+			if (keyCode === 32) {
+				playerFall(stage, player, checkCollision, setPlayer);
+			}
+			if (keyCode === 37) {
+				movePlayer(-1, updatePlayerPos, player, stage, setPlayer);
+			} else if (keyCode === 39) {
+				movePlayer(1, updatePlayerPos, player, stage, setPlayer);
+			} else if (keyCode === 40) {
+				dropPlayer(
+					setDropTime,
+					drop,
+					rows,
+					level,
+					player,
+					stage,
+					setLevel,
+					updatePlayerPos,
+					setGameOver,
+					mainSocket,
+					start,
+					setStart,
+					setPlayer
+				);
+			} else if (keyCode === 38) {
+				playerRotation(
+					stage,
+					1,
+					playerRotate,
+					checkCollision,
+					rotate,
+					player,
+					setPlayer
+				);
+			}
+		}
+	};
 
-  const dropPlayer = () => {
-    // We don't need to run the interval when we use the arrow down to
-    // move the tetromino downwards. So deactivate it for now.
-    setDropTime(null);
-    drop();
-  };
+	useInterval(
+		(mainSocket, addRow, updatePlayerPos) => {
+			socketOn( mainSocket,
+				"addRow",
+				() => {
+					addRow(stage, setStage);
+					updatePlayerPos({ x: 0, y: 0, collided: false }, setPlayer);
+				},
+				mainSocket,
+				addRow,
+				updatePlayerPos
+			);
+			drop(
+				rows,
+				level,
+				player,
+				stage,
+				setLevel,
+				setDropTime,
+				updatePlayerPos,
+				setGameOver,
+				mainSocket,
+				start,
+				setStart,
+				setPlayer
+			);
+		},
+		mainSocket,
+		addRow,
+		updatePlayerPos,
+		dropTime
+	);
+	useMountEffect(
+		connect,
+		userSocket,
+		newGame,
+		setHost,
+		setUser,
+		setShapes,
+		setWinner,
+		setGameOver,
+		setDropTime,
+		setStart
+	);
 
-  // This one starts the game
-  // Custom hook by Dan Abramov
-  useInterval(() => {
-    drop();
-  }, dropTime);
-
-  const move = ({ keyCode }) => {
-    if (!gameOver) {
-      if (keyCode === 37) {
-        movePlayer(-1);
-      } else if (keyCode === 39) {
-        movePlayer(1);
-      } else if (keyCode === 40) {
-        dropPlayer();
-      } else if (keyCode === 38) {
-        playerRotate(stage, 1);
-      }
-    }
-  };
-
-  return (
-    <StyledTetrisWrapper
-      role="button"
-      tabIndex="0"
-      onKeyDown={e => move(e)}
-      onKeyUp={keyUp}
-    >
-      <StyledTetris>
-        <Stage stage={stage} />
-        <aside>
-          {gameOver ? (
-            <Display gameOver={gameOver} text="Game Over" />
-          ) : (
-            <div>
-              <Display text={`Score: ${score}`} />
-              <Display text={`rows: ${rows}`} />
-              <Display text={`Level: ${level}`} />
-            </div>
-          )}
-          <StartButton callback={startGame} />
-        </aside>
-      </StyledTetris>
-    </StyledTetrisWrapper>
-  );
+	return (
+		<StyledTetrisWrapper
+			role="button"
+			tabIndex="0"
+			onKeyDown={(e) =>
+				move(
+					e,
+					movePlayer,
+					dropPlayer,
+					setDropTime,
+					drop,
+					rows,
+					level,
+					player,
+					stage,
+					setLevel,
+					updatePlayerPos,
+					setGameOver,
+					mainSocket,
+					start,
+					setStart,
+					playerRotation,
+					playerRotate,
+					gameOver,
+					setPlayer
+				)
+			}
+			onKeyUp={(e) => keyUp(e, gameOver, setDropTime, level)}
+		>
+			<StyledTetris>
+				<Stage stage={stage} />
+				<aside>
+					{winner ? (
+						<Display id="winnerDisplay" text={`Winner: ${winner}`} />
+					) : (
+						""
+					)}
+					{gameOver ? (
+						<Display
+							id="gameOverDisplay"
+							gameOver={gameOver}
+							text="Game Over"
+						/>
+					) : (
+						<div id="test">
+							{user ? (
+								<Display id="nicknameDisplay" text={`Name: ${user.p_name}`} />
+							) : (
+								""
+							)}
+							<Display id="scoreDisplay" text={`Score: ${score}`} />
+							<Display id="rowDisplay" text={`Rows: ${rows}`} />
+							<Display id="levelDisplay" text={`Level: ${level}`} />
+							<Display id="leftDisplay" text={`Left: ${newGame.left.length}`} />
+						</div>
+					)}
+					{start ? (
+						""
+					) : host ? (
+						<StartButton
+							callback={callStartGame}
+							mainSocket={mainSocket}
+							setStart={setStart}
+							newGame={newGame}
+						/>
+					) : (
+						<p>Waiting for host</p>
+					)}
+				</aside>
+				{!gameOver ? (
+					<div id="stageContainer">
+						{newGame.left
+							? newGame.users.map((value, index) => {
+									if (
+										value.arena &&
+										value.id !== mainSocket.id &&
+										newGame.left.find((e) => e.id === value.id)
+									)
+										return (
+											<div key={index} style={{ padding: "0 10px" }}>
+												<p>{value.p_name}</p>
+												<Stage type={1} stage={value.arena} />
+											</div>
+										);
+									return null;
+							  })
+							: ""}
+					</div>
+				) : (
+					""
+				)}
+			</StyledTetris>
+		</StyledTetrisWrapper>
+	);
 };
 
 export default Tetris;

@@ -1,57 +1,79 @@
-import { useState, useEffect } from 'react';
-import { createStage } from '../helpers/gameHelpers';
+import { useState, useEffect } from "react";
 
-export const useStage = (player, resetPlayer) => {
+import { createStage } from "../helpers/gameHelpers";
+import { socketEmit } from "../middleware/socket";
+
+export const useStage = (
+  player,
+  resetPlayer,
+  mainSocket,
+  shapes,
+  shapeTrack,
+  setPlayer
+) => {
   const [stage, setStage] = useState(createStage());
   const [rowsCleared, setRowsCleared] = useState(0);
 
+  const addRow = (stage, setStage) => {
+    for (let i = 1; i < stage.length; i++) stage[i - 1] = [...stage[i]];
+    stage[stage.length - 1] = new Array(stage[0].length).fill(["B", "test"]);
+    setStage(stage);
+  };
   useEffect(() => {
+    let counter = 0;
     setRowsCleared(0);
-    const sweepRows = newStage =>
+    const sweepRows = (newStage, mainSocket) =>
       newStage.reduce((ack, row) => {
-        if (row.findIndex(cell => cell[0] === 0) === -1) {
-          setRowsCleared(prev => prev + 1);
-          ack.unshift(new Array(newStage[0].length).fill([0, 'clear']));
+        if (row.findIndex((cell) => cell[0] === 0 || cell[0] === "B") === -1) {
+          setRowsCleared((prev) => prev + 1);
+          ack.unshift(new Array(newStage[0].length).fill([0, "clear"]));
+          counter++;
+          if (counter > 1) socketEmit(mainSocket, "clearRow");
           return ack;
         }
         ack.push(row);
         return ack;
       }, []);
 
-    const updateStage = prevStage => {
-      // First flush the stage
-      const newStage = prevStage.map(row =>
-        row.map(cell => (cell[1] === 'clear' ? [0, 'clear'] : cell))
+    const updateStage = (
+      prevStage,
+      player,
+      resetPlayer,
+      sweepRows,
+      mainSocket
+    ) => {
+      // first flush stage from the previous render
+      const newStage = prevStage.map((row) =>
+        row.map((cell) => (cell[1] === "clear" ? [0, "clear"] : cell))
       );
 
-      // Then draw the tetromino
+      // then draw tetromino
       player.tetromino.forEach((row, y) => {
         row.forEach((value, x) => {
           if (value !== 0) {
             newStage[y + player.pos.y][x + player.pos.x] = [
               value,
-              `${player.collided ? 'merged' : 'clear'}`,
+              `${player.collided ? "merged" : "clear"}`,
             ];
           }
         });
       });
-      // Then check if we got some score if collided
+      // then check if collided
       if (player.collided) {
-        resetPlayer();
-        return sweepRows(newStage);
+        resetPlayer(shapes, shapeTrack, setPlayer);
+        let temp = sweepRows(newStage, mainSocket);
+        socketEmit(mainSocket,"updatePlayer", temp);
+        return temp;
       }
+
       return newStage;
     };
 
-    // Here are the updates
-    setStage(prev => updateStage(prev));
-  }, [
-    player.collided,
-    player.pos.x,
-    player.pos.y,
-    player.tetromino,
-    resetPlayer,
-  ]);
+    setStage((prev) =>
+      updateStage(prev, player, resetPlayer, sweepRows, mainSocket)
+    );
+    // eslint-disable-next-line
+  }, [player, resetPlayer, mainSocket, rowsCleared, shapeTrack, shapes]);
 
-  return [stage, setStage, rowsCleared];
+  return { stage, setStage, rowsCleared, addRow };
 };

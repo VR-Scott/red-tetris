@@ -5,7 +5,7 @@ const generateShapes = () => {
     Tetro;
     let shapes = [];
     for (i =0; i < 50; i++){
-        shapes.push(new Piece().randomTetromino());
+        shapes.push(new Tetro().randomTetromino());
     }
 	return shapes;
 };

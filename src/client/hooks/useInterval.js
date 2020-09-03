@@ -1,6 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
-export function useInterval(callback, delay) {
+export function useInterval(
+  callback,
+  mainSocket,
+  addRow,
+  updatePlayerPos,
+  delay
+) {
   const savedCallback = useRef();
   // Remember the latest callback.
   useEffect(() => {
@@ -10,7 +16,7 @@ export function useInterval(callback, delay) {
   // Set up the interval.
   useEffect(() => {
     function tick() {
-      savedCallback.current();
+      savedCallback.current(mainSocket, addRow, updatePlayerPos);
     }
     if (delay !== null) {
       const id = setInterval(tick, delay);
@@ -18,5 +24,6 @@ export function useInterval(callback, delay) {
         clearInterval(id);
       };
     }
+    // eslint-disable-next-line
   }, [delay]);
 }
