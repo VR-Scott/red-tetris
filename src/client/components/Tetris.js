@@ -119,7 +119,7 @@ const Tetris = (props) => {
 			if (!mainSocket) {
 				let test = props.room.split("[");
 				newGame.room = test[0][0] === "#" ? test[0].substr(1) : test[0];
-				mainSocket = await userSocket(props.room);
+				mainSocket = await userSocket(props.room, props.ip);
 				socketOff(mainSocket, "updateUsers")
 				socketOff(mainSocket, "updateUsers");
 				socketOff(mainSocket, "addRow");
@@ -158,7 +158,7 @@ const Tetris = (props) => {
 				});
 			}
 		},
-		[props.room, stage]
+		[props.room, stage, props.ip]
 	);
 
 	const useMountEffect = (
