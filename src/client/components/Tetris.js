@@ -68,7 +68,6 @@ const Tetris = (props) => {
 			setRows,
 			setLevel
 		) => {
-			// Reset everything
 			setStart(true);
 			setStage(createStage());
 			setDropTime(1000);
@@ -80,7 +79,6 @@ const Tetris = (props) => {
 			setRows(0);
 			setLevel(1);
 		},
-		// eslint-disable-next-line
 		[resetPlayer, setLevel, setRows, setScore, setStage, shapes]
 	);
 
@@ -99,7 +97,6 @@ const Tetris = (props) => {
 				setLevel
 			);
 		}
-		// eslint-disable-next-line
 	}, [shapes, startGame]);
 	useEffect(() => {
 		if (gameOver) setShapeTrack(0);
@@ -185,7 +182,6 @@ const Tetris = (props) => {
 				setDropTime,
 				setStart
 			);
-			// eslint-disable-next-line
 		}, []);
 
 	const callStartGame = (mainSocket, setStart, newGame) => {
@@ -223,10 +219,6 @@ const Tetris = (props) => {
 		setPlayer
 	) => {
 		if (!gameOver) {
-			// 37 = left arrow, -1 on x axis
-			// 39 = right arrow, +1 on x axis
-			// 40 = down arrow
-			// 38 = up arrow, rotate
 			if (keyCode === 32) {
 				playerFall(stage, player, checkCollision, setPlayer);
 			}
