@@ -16,7 +16,7 @@ exports.makeSocket = (io) => {
 		socket.on("join", (r) => {
 			let temp = r.split("[");
 			room = temp[0][0] == "#" ? temp[0].substr(1) : temp[0];
-			p_name = temp[1] ? temp[1].substr(0, temp[1].length - 1) : "Anon";
+			p_name = temp[1] ? temp[1].substr(0, temp[1].length - 1) : "Bobbers" + Math.ceil(Math.random() * 12);
 			socket.join(room);
 			let what = new Player(socket.id, p_name, room);
 			users.push(what);
@@ -57,7 +57,7 @@ exports.makeSocket = (io) => {
 			io.to(room).emit("receive shapes", generateShapes());
 		});
 		socket.on("start?", (r) => {
-			io.to(r).emit("startiguess", r);
+			io.to(r).emit("start_game", r);
 		});
 		socket.on("disconnect", () => {
 			users.splice(
