@@ -117,10 +117,10 @@ const Tetris = (props) => {
 				let test = props.room.split("[");
 				newGame.room = test[0][0] === "#" ? test[0].substr(1) : test[0];
 				mainSocket = await userSocket(props.room);
-				socketOff(mainSocket, "updateUsers")
+				// socketOff(mainSocket, "updateUsers")
 				socketOff(mainSocket, "updateUsers");
 				socketOff(mainSocket, "addRow");
-				socketOff(mainSocket, "startiguess");
+				socketOff(mainSocket, "start_game");
 				socketOff(mainSocket, "deadUser");
 				socketOff(mainSocket, "setWinner");
 				socketOn(mainSocket, "updateUsers", (t) => {
@@ -129,7 +129,7 @@ const Tetris = (props) => {
 						setHost(true);
 					setUser(newGame.users.find((e) => e.id === mainSocket.id));
 				});
-				socketOn(mainSocket, "startiguess", (r) => {
+				socketOn(mainSocket, "start_game", (r) => {
 					socketEmit(mainSocket, "updatePlayer", stage);
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
 						socketEmit(mainSocket, "receive shapes", r);
@@ -352,9 +352,6 @@ const Tetris = (props) => {
 								""
 							)}
 							<Display id="scoreDisplay" text={`Score: ${score}`} />
-							<Display id="rowDisplay" text={`Rows: ${rows}`} />
-							<Display id="levelDisplay" text={`Level: ${level}`} />
-							<Display id="leftDisplay" text={`Left: ${newGame.left.length}`} />
 						</div>
 					)}
 					{start ? (

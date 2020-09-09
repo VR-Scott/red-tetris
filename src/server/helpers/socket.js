@@ -57,7 +57,7 @@ exports.makeSocket = (io) => {
 			io.to(room).emit("receive shapes", generateShapes());
 		});
 		socket.on("start?", (r) => {
-			io.to(r).emit("startiguess", r);
+			io.to(r).emit("start_game", r);
 		});
 		socket.on("disconnect", () => {
 			users.splice(
