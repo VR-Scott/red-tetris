@@ -15,10 +15,11 @@
     "styled-components": "^4.3.2"
   },
   "scripts": {
-    "start": "concurrently --kill-others \"npm run start-client\" \"npm run start-srv\"",
+    "con": "concurrently --kill-others \"npm run start\" \"npm run start-srv\"",
     "eslint": "eslint src",
     "prod-client": "npx react-scripts build",
     "start-client": "npx react-scripts start",
+    "start": "react-scripts start",
     "start-srv": "npx nodemon src/server/index.js",
     "coverage": "npm test -- --coverage --watchAll=false -u",
     "test": "react-scripts test"

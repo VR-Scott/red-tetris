@@ -14,12 +14,14 @@ export const useGameStatus = (rowsCleared) => {
         setRows((prev) => prev + rowsCleared);
       }
     },
-    [level, linePoints, rowsCleared]
+    [level
+      // , linePoints, rowsCleared
+    ]
   );
 
   useEffect(() => {
     calcScore(rowsCleared, setScore, setRows, linePoints);
-  }, [calcScore, rowsCleared, score]);
+  }, [calcScore, linePoints, rowsCleared, score]);
 
   return { score, setScore, rows, setRows, level, setLevel };
 };
