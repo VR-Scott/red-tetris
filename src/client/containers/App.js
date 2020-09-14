@@ -1,9 +1,3 @@
-// const App = () => (
-//   <div className="App">
-//     <Tetris />
-//   </div>
-// );
-
 import React from 'react';
 import {
 	BrowserRouter as Router,
