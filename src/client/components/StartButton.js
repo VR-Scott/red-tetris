@@ -6,7 +6,7 @@ import { Header } from 'semantic-ui-react';
 const StartButton = ({ callback, mainSocket, setStart, newGame}) => (
   <Button variant="contained"
 id="startButton"
-  onClick={() => callback(mainSocket, setStart, newGame, setStart)} fullWidth>
+  onClick={() => callback(mainSocket, setStart, newGame, setStart)}>
 
   <Header>START GAME</Header>
 </Button>
