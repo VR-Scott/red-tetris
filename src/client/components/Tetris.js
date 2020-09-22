@@ -52,7 +52,7 @@ const Tetris = (props) => {
 		shapeTrack,
 		setPlayer
 	);
-	const { score, setScore, rows, setRows, level, setLevel } = useGameStatus(
+	const { rows, setRows } = useGameStatus(
 		rowsCleared
 	);
 	const startGame = useCallback(
@@ -64,9 +64,7 @@ const Tetris = (props) => {
 			setGameOver,
 			newGame,
 			setWinner,
-			setScore,
 			setRows,
-			setLevel
 		) => {
 			setStart(true);
 			setStage(createStage());
@@ -75,11 +73,9 @@ const Tetris = (props) => {
 			setGameOver(false);
 			newGame.left = [...newGame.users];
 			setWinner(null);
-			setScore(0);
 			setRows(0);
-			setLevel(1);
 		},
-		[resetPlayer, setLevel, setRows, setScore, setStage, shapes]
+		[resetPlayer, setRows, setStage, shapes, setPlayer]
 	);
 
 	useEffect(() => {
@@ -92,12 +88,10 @@ const Tetris = (props) => {
 				setGameOver,
 				newGame,
 				setWinner,
-				setScore,
 				setRows,
-				setLevel
 			);
 		}
-	}, [shapes, startGame]);
+	}, [shapes, startGame, resetPlayer, setRows, setStage]);
 	useEffect(() => {
 		if (gameOver) setShapeTrack(0);
 	}, [gameOver, shapeTrack, setShapeTrack]);
@@ -182,17 +176,17 @@ const Tetris = (props) => {
 				setDropTime,
 				setStart
 			);
-		}, []);
+		}, [fun, newGame, setDropTime, setGameOver, setHost, setShapes, setStart, setUser, setWinner, userSocket]);
 
 	const callStartGame = (mainSocket, setStart, newGame) => {
 		socketEmit(mainSocket,"start?", newGame.room);
 		setStart(true);
 	};
 
-	const keyUp = ({ keyCode }, gameOver, setDropTime, level) => {
+	const keyUp = ({ keyCode }, gameOver, setDropTime) => {
 		if (!gameOver) {
 			if (keyCode === 40) {
-				setDropTime(1000 / (level + 1) + 200);
+				setDropTime(1000);
 			}
 		}
 	};
@@ -204,10 +198,8 @@ const Tetris = (props) => {
 		setDropTime,
 		drop,
 		rows,
-		level,
 		player,
 		stage,
-		setLevel,
 		updatePlayerPos,
 		setGameOver,
 		mainSocket,
@@ -231,10 +223,8 @@ const Tetris = (props) => {
 					setDropTime,
 					drop,
 					rows,
-					level,
 					player,
 					stage,
-					setLevel,
 					updatePlayerPos,
 					setGameOver,
 					mainSocket,
@@ -270,10 +260,8 @@ const Tetris = (props) => {
 			);
 			drop(
 				rows,
-				level,
 				player,
 				stage,
-				setLevel,
 				setDropTime,
 				updatePlayerPos,
 				setGameOver,
@@ -313,10 +301,8 @@ const Tetris = (props) => {
 					setDropTime,
 					drop,
 					rows,
-					level,
 					player,
 					stage,
-					setLevel,
 					updatePlayerPos,
 					setGameOver,
 					mainSocket,
@@ -328,7 +314,7 @@ const Tetris = (props) => {
 					setPlayer
 				)
 			}
-			onKeyUp={(e) => keyUp(e, gameOver, setDropTime, level)}
+			onKeyUp={(e) => keyUp(e, gameOver, setDropTime)}
 		>
 			<StyledTetris>
 				<Stage stage={stage} />
@@ -351,7 +337,7 @@ const Tetris = (props) => {
 							) : (
 								""
 							)}
-							<Display id="scoreDisplay" text={`Score: ${score}`} />
+							<Display id="rowsDisplay" text={`Rows: ${rows}`} />
 						</div>
 					)}
 					{start ? (
