@@ -118,10 +118,10 @@ const Tetris = (props) => {
 				newGame.room = test[0][0] === "#" ? test[0].substr(1) : test[0];
 				mainSocket = await userSocket(props.room, props.ip);
 				socketOff(mainSocket, "updateUsers");
-				socketOff(mainSocket, "addRow");
+				socketOff(mainSocket, "penalty_row");
 				socketOff(mainSocket, "start_game");
-				socketOff(mainSocket, "deadUser");
-				socketOff(mainSocket, "setWinner");
+				socketOff(mainSocket, "dc_player");
+				socketOff(mainSocket, "set_player_winner");
 				socketOn(mainSocket, "updateUsers", (t) => {
 					newGame.users = t;
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
@@ -131,12 +131,12 @@ const Tetris = (props) => {
 				socketOn(mainSocket, "start_game", (r) => {
 					socketEmit(mainSocket, "updatePlayer", stage);
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
-						socketEmit(mainSocket, "receive shapes", r);
+						socketEmit(mainSocket, "create_tetrominos", r);
 				});
-				socketOn(mainSocket, "receive shapes", (shapes1) => {
+				socketOn(mainSocket, "create_tetrominos", (shapes1) => {
 					setShapes(shapes1);
 				});
-				socketOn(mainSocket, "deadUser", (id) => {
+				socketOn(mainSocket, "dc_player", (id) => {
 					newGame.left.splice(
 						newGame.left.findIndex((e) => e.id === id),
 						1
@@ -147,7 +147,7 @@ const Tetris = (props) => {
 						socketEmit(mainSocket, "winner", newGame.left[0]);
 					}
 				});
-				socketOn(mainSocket, "setWinner", (p_name) => {
+				socketOn(mainSocket, "set_player_winner", (p_name) => {
 					setStart(false);
 					socketEmit(mainSocket, "updatePlayer", stage);
 					setWinner(p_name);
@@ -258,7 +258,7 @@ const Tetris = (props) => {
 	useInterval(
 		(mainSocket, addRow, updatePlayerPos) => {
 			socketOn( mainSocket,
-				"addRow",
+				"penalty_row",
 				() => {
 					addRow(stage, setStage);
 					updatePlayerPos({ x: 0, y: 0, collided: false }, setPlayer);
