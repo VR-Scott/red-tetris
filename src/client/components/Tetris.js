@@ -18,6 +18,7 @@ import Display from "./Display";
 import StartButton from "./StartButton";
 import { TETROMINOS } from "../helpers/tetrominos";
 
+// new game obj
 let newGame = {
 	users: [],
 	left: [],
