@@ -25,6 +25,7 @@ let newGame = {
 	room: null,
 };
 
+// Will hold clientSide socket connection
 let mainSocket = null;
 
 const Tetris = (props) => {
@@ -115,39 +116,57 @@ const Tetris = (props) => {
 			setStart
 		) => {
 			if (!mainSocket) {
+				// if a room and name are passed in the url the string props.room consists of that. i.e. '#room2[myName]'
 				let test = props.room.split("[");
+				// test now consists of array with the room and name separated. i.e. ['#room2', '\myName\']
 				newGame.room = test[0][0] === "#" ? test[0].substr(1) : test[0];
+				// newGame.room now contains room's name without the #
+				// userSocket takes the props room and ip.
+				// ip is a string of the ip address used to connect to the computer that is hosting.
+				// if local then localhost but if hosting over LAN then the computer's LAN IP address
 				mainSocket = await userSocket(props.room, props.ip);
+				// userSocket returns the socket connection to the server.
 				socketOff(mainSocket, "updateUsers");
 				socketOff(mainSocket, "addRow");
 				socketOff(mainSocket, "start_game");
 				socketOff(mainSocket, "deadUser");
 				socketOff(mainSocket, "setWinner");
+				// updates users list and sets this user id to the correct one when it received the updateUsers message from server
 				socketOn(mainSocket, "updateUsers", (t) => {
 					newGame.users = t;
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
 						setHost(true);
 					setUser(newGame.users.find((e) => e.id === mainSocket.id));
 				});
+				
+				// when it receives "start_game" message it send out a message to update this player and
+				// if it is host sends out message to room with the shapes.
 				socketOn(mainSocket, "start_game", (r) => {
 					socketEmit(mainSocket, "updatePlayer", stage);
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
 						socketEmit(mainSocket, "receive shapes", r);
 				});
+
+				// when receives message "receive shapes" it sets it's shapes to the shapes received.
 				socketOn(mainSocket, "receive shapes", (shapes1) => {
 					setShapes(shapes1);
 				});
+
+				// when receives "deadUser" it removes that user from the list of players left.
 				socketOn(mainSocket, "deadUser", (id) => {
 					newGame.left.splice(
 						newGame.left.findIndex((e) => e.id === id),
 						1
 					);
+					// if only one player left that player is the winner.
 					if (newGame.left.length === 1) {
 						setGameOver(true);
 						setDropTime(null);
 						socketEmit(mainSocket, "winner", newGame.left[0]);
 					}
 				});
+				
+				// sets winner display to the correct name.
 				socketOn(mainSocket, "setWinner", (p_name) => {
 					setStart(false);
 					socketEmit(mainSocket, "updatePlayer", stage);
@@ -184,19 +203,23 @@ const Tetris = (props) => {
 			);
 		}, []);
 
+		// declaring the function that will emit the start message to all the players
 	const callStartGame = (mainSocket, setStart, newGame) => {
 		socketEmit(mainSocket,"start?", newGame.room);
 		setStart(true);
 	};
 
+	// when release the down button the drop speed returns to normal
 	const keyUp = ({ keyCode }, gameOver, setDropTime, level) => {
 		if (!gameOver) {
 			if (keyCode === 40) {
-				setDropTime(1000 / (level + 1) + 200);
+				// setDropTime(1000 / (level + 1) + 200);
+				setDropTime(1000);
 			}
 		}
 	};
 
+	// checks if 1 of the arrows is pressed and does the corresponding action 
 	const move = (
 		{ keyCode },
 		movePlayer,
@@ -219,6 +242,16 @@ const Tetris = (props) => {
 		setPlayer
 	) => {
 		if (!gameOver) {
+			// switch(expression) {
+			// case x:
+			// 	// code block
+			// 	break;
+			// case y:
+			// 	// code block
+			// 	break;
+			// default:
+			// 	// code block
+			// }
 			if (keyCode === 32) {
 				playerFall(stage, player, checkCollision, setPlayer);
 			}
