@@ -15,7 +15,9 @@ export const useStage = (
   const [rowsCleared, setRowsCleared] = useState(0);
 
   const addRow = (stage, setStage) => {
+    // moves all rows up
     for (let i = 1; i < stage.length; i++) stage[i - 1] = [...stage[i]];
+    // puts row of "B" blocks at the bottom.
     stage[stage.length - 1] = new Array(stage[0].length).fill(["B", "test"]);
     setStage(stage);
   };

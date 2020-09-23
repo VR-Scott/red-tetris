@@ -31,6 +31,7 @@ let mainSocket = null;
 const Tetris = (props) => {
 	const [dropTime, setDropTime] = useState(null);
 	const [gameOver, setGameOver] = useState(false);
+	const [bob, setBob] = useState(true)
 	const [winner, setWinner] = useState(null);
 	const [host, setHost] = useState(false);
 	const [shapes, setShapes] = useState(null);
@@ -217,9 +218,9 @@ const Tetris = (props) => {
 		}
 	};
 
-	// checks if 1 of the arrows is pressed and does the corresponding action 
+	// checks if an arrow key or spacebar is pressed and does the corresponding action 
 	const move = (
-		{ keyCode },
+		{ key },
 		movePlayer,
 		dropPlayer,
 		setDropTime,
@@ -240,50 +241,47 @@ const Tetris = (props) => {
 		setPlayer
 	) => {
 		if (!gameOver) {
-			// switch(expression) {
-			// case x:
-			// 	// code block
-			// 	break;
-			// case y:
-			// 	// code block
-			// 	break;
-			// default:
-			// 	// code block
-			// }
-			if (keyCode === 32) {
-				playerFall(stage, player, checkCollision, setPlayer);
+			switch(key) {
+				case " ":
+					playerFall(stage, player, checkCollision, setPlayer);
+					break;
+				case "ArrowLeft":
+					movePlayer(-1, updatePlayerPos, player, stage, setPlayer);
+					break;
+				case "ArrowRight":
+					movePlayer(1, updatePlayerPos, player, stage, setPlayer);
+					break;
+				case "ArrowDown":
+					dropPlayer(
+						setDropTime,
+						drop,
+						rows,
+						level,
+						player,
+						stage,
+						setLevel,
+						updatePlayerPos,
+						setGameOver,
+						mainSocket,
+						start,
+						setStart,
+						setPlayer
+					);
+					break;
+				case "ArrowUp":
+					playerRotation(
+						stage,
+						1,
+						playerRotate,
+						checkCollision,
+						rotate,
+						player,
+						setPlayer
+					);
+					break;
+				default:
 			}
-			if (keyCode === 37) {
-				movePlayer(-1, updatePlayerPos, player, stage, setPlayer);
-			} else if (keyCode === 39) {
-				movePlayer(1, updatePlayerPos, player, stage, setPlayer);
-			} else if (keyCode === 40) {
-				dropPlayer(
-					setDropTime,
-					drop,
-					rows,
-					level,
-					player,
-					stage,
-					setLevel,
-					updatePlayerPos,
-					setGameOver,
-					mainSocket,
-					start,
-					setStart,
-					setPlayer
-				);
-			} else if (keyCode === 38) {
-				playerRotation(
-					stage,
-					1,
-					playerRotate,
-					checkCollision,
-					rotate,
-					player,
-					setPlayer
-				);
-			}
+
 		}
 	};
 
@@ -364,7 +362,12 @@ const Tetris = (props) => {
 			<StyledTetris>
 				<Stage stage={stage} />
 				<aside>
-					{winner ? (
+					{winner ? winner.includes("Bobbers") ? (
+						<div>
+							<Display id="winnerDisplay" text={`Winner: ${winner}`} />
+							<Display id="bobDisplay" bob={bob} text={`Bobbers is the greatest!`} />
+						</div>
+					) :  (
 						<Display id="winnerDisplay" text={`Winner: ${winner}`} />
 					) : (
 						""
