@@ -11,15 +11,17 @@ export const usePlayer = (setShapeTrack, TETROMINOS) => {
 
 	const rotate = (matrix, dir) => {
 		// make rows become cols (transpose)
+		// reverse each row to get rotated matrix
 		const rotatedTetro = matrix.map((_, index) =>
 			matrix.map((col) => col[index])
 		);
 
-		// reverse each row to get rotated matrix
 		if (dir > 0) return rotatedTetro.map((row) => row.reverse());
 		return rotatedTetro.reverse();
 	};
 
+	//we check if there is a collision by seeing if the position on the tetris piece is sitting either against the floor/celiing of the tetris board - the cloned piece is one step
+	// ahead of the current position of the actual piece - if there's no collision ie: nothing there, then piece falls (player peice is set to cloned piece)
 	const playerFall = (stage, player, checkCollision, setPlayer) => {
 		const clonedPlayer = JSON.parse(JSON.stringify(player));
 		while (!checkCollision(clonedPlayer, stage, { x: 0, y: 0 })) {
@@ -29,6 +31,8 @@ export const usePlayer = (setShapeTrack, TETROMINOS) => {
 		setPlayer(clonedPlayer);
 	};
 
+	//check colliosions on side similarly to above func, if nothing is in the way, then rotate ie: set current piece to cloned piece (allow it to rotate).
+	// is it allowed to rotate (offset)? if so, then rotate
 	const playerRotate = (
 		stage,
 		dir,
@@ -53,7 +57,8 @@ export const usePlayer = (setShapeTrack, TETROMINOS) => {
 		}
 		setPlayer(clonedPlayer);
 	};
-
+	// once a piece has fallen or rotation made and a colliosion occurs, that piece is set, the player position is reset to the top (below func) and piece/s that have landed
+	// are set in Shapetrack (rendered)
 	const updatePlayerPos = ({ x, y, collided }, setPlayer) => {
 		setPlayer((prev) => ({
 			...prev,
