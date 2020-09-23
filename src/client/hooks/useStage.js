@@ -62,7 +62,7 @@ export const useStage = (
       if (player.collided) {
         resetPlayer(shapes, shapeTrack, setPlayer);
         let temp = sweepRows(newStage, mainSocket);
-        socketEmit(mainSocket,"updatePlayer", temp);
+        socketEmit(mainSocket,"update_player", temp);
         return temp;
       }
 

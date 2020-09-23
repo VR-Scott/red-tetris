@@ -126,13 +126,13 @@ const Tetris = (props) => {
 				// if local then localhost but if hosting over LAN then the computer's LAN IP address
 				mainSocket = await userSocket(props.room, props.ip);
 				// userSocket returns the socket connection to the server.
-				socketOff(mainSocket, "updateUsers");
-				socketOff(mainSocket, "addRow");
+				socketOff(mainSocket, "update_users");
+				socketOff(mainSocket, "penalty_row");
 				socketOff(mainSocket, "start_game");
-				socketOff(mainSocket, "deadUser");
-				socketOff(mainSocket, "setWinner");
-				// updates users list and sets this user id to the correct one when it received the updateUsers message from server
-				socketOn(mainSocket, "updateUsers", (t) => {
+				socketOff(mainSocket, "dc_player");
+				socketOff(mainSocket, "set_player_winner");
+				//set first user at index 0 to be host
+				socketOn(mainSocket, "update_users", (t) => {
 					newGame.users = t;
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
 						setHost(true);
@@ -142,18 +142,17 @@ const Tetris = (props) => {
 				// when it receives "start_game" message it send out a message to update this player and
 				// if it is host sends out message to room with the shapes.
 				socketOn(mainSocket, "start_game", (r) => {
-					socketEmit(mainSocket, "updatePlayer", stage);
+					socketEmit(mainSocket, "update_player", stage);
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
-						socketEmit(mainSocket, "receive shapes", r);
+						socketEmit(mainSocket, "create_tetrominos", r);
 				});
-
-				// when receives message "receive shapes" it sets it's shapes to the shapes received.
-				socketOn(mainSocket, "receive shapes", (shapes1) => {
+				// when receives message "create_tetrominos shapes" it sets it's shapes to the shapes received.
+				socketOn(mainSocket, "create_tetrominos", (shapes1) => {
 					setShapes(shapes1);
 				});
 
-				// when receives "deadUser" it removes that user from the list of players left.
-				socketOn(mainSocket, "deadUser", (id) => {
+				// when receives "dc_player" it removes that user from the list of players left.
+				socketOn(mainSocket, "dc_player", (id) => {
 					newGame.left.splice(
 						newGame.left.findIndex((e) => e.id === id),
 						1
@@ -165,11 +164,10 @@ const Tetris = (props) => {
 						socketEmit(mainSocket, "winner", newGame.left[0]);
 					}
 				});
-				
 				// sets winner display to the correct name.
-				socketOn(mainSocket, "setWinner", (p_name) => {
+				socketOn(mainSocket, "set_player_winner", (p_name) => {
 					setStart(false);
-					socketEmit(mainSocket, "updatePlayer", stage);
+					socketEmit(mainSocket, "update_player", stage);
 					setWinner(p_name);
 				});
 			}
@@ -292,7 +290,7 @@ const Tetris = (props) => {
 	useInterval(
 		(mainSocket, addRow, updatePlayerPos) => {
 			socketOn( mainSocket,
-				"addRow",
+				"penalty_row",
 				() => {
 					addRow(stage, setStage);
 					updatePlayerPos({ x: 0, y: 0, collided: false }, setPlayer);

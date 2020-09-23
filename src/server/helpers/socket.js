@@ -24,41 +24,41 @@ exports.makeSocket = (io) => {
 			users.push(what);
 			what = null;
 			io.to(room).emit(
-				"updateUsers",
+				"update_users",
 				users.filter((e) => e.room == room)
 			);
 		});
-		socket.on("updatePlayer", (p) => {
+		socket.on("update_player", (p) => {
 			users = users.map((e) => {
 				if (e.id === socket.id) e.arena = [...p];
 				return e;
 			});
 			io.to(room).emit(
-				"updateUsers",
+				"update_users",
 				users.filter((e) => e.room == room)
 			);
 		});
 		socket.on("clearRow", () => {
-			socket.to(room).emit("addRow");
+			socket.to(room).emit("penalty_row");
 		});
-		socket.on("died", (id) => {
-			socket.to(room).emit("deadUser", id);
+		socket.on("lose", (id) => {
+			socket.to(room).emit("dc_player", id);
 		});
 		//last player standing send "winner" message
 		socket.on("winner", (winner) => {
-			socket.nsp.to(room).emit("setWinner", winner.p_name);
+			socket.nsp.to(room).emit("set_player_winner", winner.p_name);
 		});
-		socket.on("endgame", () => {
+		socket.on("end_game", () => {
 			io.of("/")
 				.in(room)
 				.clients(function (error, clients) {
 					if (clients.length - 2 == 0)
-						socket.to(Object.keys(socket.rooms)[0]).emit("endgame");
+						socket.to(Object.keys(socket.rooms)[0]).emit("end_game");
 				});
 		});
 		//array of shapes sent to each client upon receiving message from client/s 
-		socket.on("receive shapes", (room) => {
-			io.to(room).emit("receive shapes", generateShapes());
+		socket.on("create_tetrominos", (room) => {
+			io.to(room).emit("create_tetrominos", generateShapes());
 		});
 		//once 1st player/host starts game - server waiting for "start" message
 		socket.on("start?", (r) => {
@@ -69,7 +69,7 @@ exports.makeSocket = (io) => {
 				users.findIndex((e) => e.id == socket.id && e.room == room),
 				1
 			);
-			socket.to(room).emit("deadUser", socket.id);
+			socket.to(room).emit("dc_player", socket.id);
 		});
 	});
 };

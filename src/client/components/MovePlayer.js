@@ -65,7 +65,7 @@ export const drop = (
     // Game Over
     if (player.pos.y < 1) {
       console.log("GAME OVER!");
-      socketEmit(mainSocket, "died", mainSocket.id);
+      socketEmit(mainSocket, "lose", mainSocket.id);
       setGameOver(true);
       setDropTime(null);
       setStart(false);
