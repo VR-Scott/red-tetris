@@ -212,7 +212,6 @@ const Tetris = (props) => {
 	const keyUp = ({ keyCode }, gameOver, setDropTime, level) => {
 		if (!gameOver) {
 			if (keyCode === 40) {
-				// setDropTime(1000 / (level + 1) + 200);
 				setDropTime(1000);
 			}
 		}
@@ -285,6 +284,9 @@ const Tetris = (props) => {
 		}
 	};
 
+	// calls custom hook that handles the interval.
+	// drops piece
+	// adds rows if receives the message
 	useInterval(
 		(mainSocket, addRow, updatePlayerPos) => {
 			socketOn( mainSocket,
@@ -362,7 +364,7 @@ const Tetris = (props) => {
 			<StyledTetris>
 				<Stage stage={stage} />
 				<aside>
-					{winner ? winner.includes("Bobbers") ? (
+					{winner ? winner.toLowerCase().includes("bobbers") ? (
 						<div>
 							<Display id="winnerDisplay" text={`Winner: ${winner}`} />
 							<Display id="bobDisplay" bob={bob} text={`Bobbers is the greatest!`} />
@@ -386,6 +388,7 @@ const Tetris = (props) => {
 								""
 							)}
 							<Display id="scoreDisplay" text={`Score: ${score}`} />
+							<Display id="rowsDisplay" text={`Rows: ${rows}`} />
 						</div>
 					)}
 					{start ? (

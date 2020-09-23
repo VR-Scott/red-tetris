@@ -4,6 +4,7 @@ export let mainSocket = null;
 export const userSocket = (room, ip) => {
   return new Promise((resolve) => {
     if (mainSocket?.connected === false || !mainSocket) {
+      // tells it to use ip on port 2000 to for the socket comms
       mainSocket = io.connect(ip + "2000");
       mainSocket.on("connection", () => {
         mainSocket.emit("join", room);

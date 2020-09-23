@@ -1,11 +1,11 @@
 import React from 'react';
-import styled from 'styled-components';
+// import styled from 'styled-components';
 import { Button } from 'semantic-ui-react';
 import { Header } from 'semantic-ui-react';
 
 const StartButton = ({ callback, mainSocket, setStart, newGame}) => (
   <Button variant="contained"
-id="startButton"
+  id="startButton"
   onClick={() => callback(mainSocket, setStart, newGame, setStart)}>
 
   <Header>START GAME</Header>

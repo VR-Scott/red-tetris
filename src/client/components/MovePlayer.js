@@ -53,12 +53,6 @@ export const drop = (
   setStart,
   setPlayer
 ) => {
-  // Increase level when player has cleared 10 rows
-  if (rows > (level + 1) * 10) {
-    setLevel((prev) => prev + 1);
-    // Also increase the speed
-    setDropTime(1000 / (level + 1) + 200);
-  }
   if (!checkCollision(player, stage, { x: 0, y: 1 })) {
     updatePlayerPos({ x: 0, y: 1, collided: false }, setPlayer);
   } else {
