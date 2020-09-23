@@ -1,5 +1,6 @@
 const { Session } = require("../models/Session");
 
+//create an instance of socket io
 exports.makeSocket = (io) => {
 	const generateShapes = require("./PieceHelpers");
 	let users = [];
@@ -13,6 +14,7 @@ exports.makeSocket = (io) => {
 				socket.emit("action", { type: "pong" });
 			}
 		});
+		//upon receiving the join message from a client -> give player a random name , join them to existing session created by host (1st person to join is host)
 		socket.on("join", (r) => {
 			let temp = r.split("[");
 			room = temp[0][0] == "#" ? temp[0].substr(1) : temp[0];
@@ -42,6 +44,7 @@ exports.makeSocket = (io) => {
 		socket.on("died", (id) => {
 			socket.to(room).emit("deadUser", id);
 		});
+		//last player standing send "winner" message
 		socket.on("winner", (winner) => {
 			socket.nsp.to(room).emit("setWinner", winner.p_name);
 		});
@@ -53,9 +56,11 @@ exports.makeSocket = (io) => {
 						socket.to(Object.keys(socket.rooms)[0]).emit("endgame");
 				});
 		});
+		//array of shapes sent to each client upon receiving message from client/s 
 		socket.on("receive shapes", (room) => {
 			io.to(room).emit("receive shapes", generateShapes());
 		});
+		//once 1st player/host starts game - server waiting for "start" message
 		socket.on("start?", (r) => {
 			io.to(r).emit("start_game", r);
 		});

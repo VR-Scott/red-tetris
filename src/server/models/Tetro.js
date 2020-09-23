@@ -1,4 +1,5 @@
 class Tetro {
+  //tetris obj with tetromino types property
 	constructor() {
 		this.TETROMINOS = {
 			0: { shape: [[0]], color: '0, 0, 0' },
@@ -20,8 +21,9 @@ class Tetro {
             },
             Z: { shape: [['Z', 'Z', 0], [0, 'Z', 'Z'], [0, 0, 0]], color: '255,50,50' },
 		};
-	}
-
+  }
+  
+  //generates a random tetris piece
 	randomTetromino() {
 		const tetrominos = "IJLOSTZ";
 		const randTetromino =
