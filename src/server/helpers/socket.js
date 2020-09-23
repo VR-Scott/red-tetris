@@ -24,17 +24,17 @@ exports.makeSocket = (io) => {
 			users.push(what);
 			what = null;
 			io.to(room).emit(
-				"updateUsers",
+				"update_users",
 				users.filter((e) => e.room == room)
 			);
 		});
-		socket.on("updatePlayer", (p) => {
+		socket.on("update_player", (p) => {
 			users = users.map((e) => {
 				if (e.id === socket.id) e.arena = [...p];
 				return e;
 			});
 			io.to(room).emit(
-				"updateUsers",
+				"update_users",
 				users.filter((e) => e.room == room)
 			);
 		});

@@ -117,19 +117,20 @@ const Tetris = (props) => {
 				let test = props.room.split("[");
 				newGame.room = test[0][0] === "#" ? test[0].substr(1) : test[0];
 				mainSocket = await userSocket(props.room, props.ip);
-				socketOff(mainSocket, "updateUsers");
+				socketOff(mainSocket, "update_users");
 				socketOff(mainSocket, "penalty_row");
 				socketOff(mainSocket, "start_game");
 				socketOff(mainSocket, "dc_player");
 				socketOff(mainSocket, "set_player_winner");
-				socketOn(mainSocket, "updateUsers", (t) => {
+				//set first user at index 0 to be host
+				socketOn(mainSocket, "update_users", (t) => {
 					newGame.users = t;
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
 						setHost(true);
 					setUser(newGame.users.find((e) => e.id === mainSocket.id));
 				});
 				socketOn(mainSocket, "start_game", (r) => {
-					socketEmit(mainSocket, "updatePlayer", stage);
+					socketEmit(mainSocket, "update_player", stage);
 					if (newGame.users[0] && newGame.users[0].id === mainSocket.id)
 						socketEmit(mainSocket, "create_tetrominos", r);
 				});
@@ -149,7 +150,7 @@ const Tetris = (props) => {
 				});
 				socketOn(mainSocket, "set_player_winner", (p_name) => {
 					setStart(false);
-					socketEmit(mainSocket, "updatePlayer", stage);
+					socketEmit(mainSocket, "update_player", stage);
 					setWinner(p_name);
 				});
 			}
